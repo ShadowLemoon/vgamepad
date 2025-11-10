@@ -34,5 +34,12 @@ jobs:
     - name: Install dependencies
       shell: pwsh
       run: |
+        # Create a fake Uninstall registry entry so setup.py detection finds ViGEmBus already installed
+        $paths = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\ViGEmFake','HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\ViGEmFake'
+        foreach ($p in $paths) {
+          New-Item -Path $p -Force | Out-Null
+          New-ItemProperty -Path $p -Name 'DisplayName' -Value 'Nefarius Virtual Gamepad Emulation Bus Driver' -PropertyType String -Force | Out-Null
+          New-ItemProperty -Path $p -Name 'DisplayVersion' -Value '1.17.333.0' -PropertyType String -Force | Out-Null
+        }
         .\.venv\Scripts\Activate.ps1
         uv pip install vgamepad
