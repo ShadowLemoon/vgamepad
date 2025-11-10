@@ -1,0 +1,38 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11.9'
+
+    - name: Install uv
+      shell: pwsh
+      run: |
+        Invoke-WebRequest -Uri https://astral.sh/uv/install.ps1 | Invoke-Expression
+
+    - name: Create and activate virtual environment
+      shell: pwsh
+      run: |
+        uv venv .venv --python=3.11.12
+
+    - name: Install dependencies
+      shell: pwsh
+      run: |
+        .\.venv\Scripts\Activate.ps1
+        uv pip install vgamepad
