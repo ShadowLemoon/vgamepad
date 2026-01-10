@@ -43,5 +43,5 @@ setup(
         'win/vigem/client/x86/ViGEmClient.dll',
         'win/vigem/install/x64/ViGEmBusSetup_x64.msi',
         'win/vigem/install/x86/ViGEmBusSetup_x86.msi',
-    ] if is_windows else []}
+    ]}
 )
