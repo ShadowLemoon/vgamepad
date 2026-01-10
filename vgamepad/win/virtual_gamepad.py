@@ -8,6 +8,11 @@ import ctypes
 from ctypes import CFUNCTYPE, c_void_p, c_ubyte
 from abc import ABC, abstractmethod
 from inspect import signature  # Check if user defined callback function is legal
+import os
+import platform
+import subprocess
+import warnings
+from pathlib import Path
 
 
 def check_err(err):
@@ -27,6 +32,73 @@ def dummy_callback(client, target, large_motor, small_motor, led_number, user_da
     :param user_data: placeholder, do not use
     """
     pass
+
+
+def _check_and_install_vigembus():
+    """
+    Checks if ViGEmBus is installed, and prompts installation if not.
+    This function is called once when the module is first loaded on Windows.
+    """
+    # Safety check: only run on Windows
+    if platform.system() != 'Windows':
+        return
+    
+    VIGEMBUS_VERSION = "1.17.333.0"
+    
+    # Determine architecture
+    archstr = platform.machine()
+    if archstr.endswith('64'):
+        arch = "x64"
+    elif archstr.endswith('86'):
+        arch = "x86"
+    else:
+        if platform.architecture()[0] == "64bit":
+            arch = "x64"
+        else:
+            arch = "x86"
+        warnings.warn(f"vgamepad could not determine your system architecture: "
+                      f"the vigembus installer will default to {arch}. If this is not your machine architecture, "
+                      f"please cancel the upcoming vigembus installation and install vigembus manually from "
+                      f"https://github.com/ViGEm/ViGEmBus/releases/tag/setup-v1.17.333")
+    
+    # Construct path to MSI installer
+    # The installer is packaged in vgamepad/win/vigem/install/{arch}/ViGEmBusSetup_{arch}.msi
+    pathMsi = Path(__file__).parent.absolute() / "vigem" / "install" / arch / ("ViGEmBusSetup_" + arch + ".msi")
+    
+    # Try to detect if vigembus is already installed
+    vigem_installed = False
+    try:
+        registry_str = subprocess.check_output(
+            ['reg', 'query', r'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall', '/s'], 
+            text=True).lower()
+        j = registry_str.find('nefarius virtual gamepad emulation bus driver')
+        if j > 0:
+            vigem_installed = True
+            i = registry_str[:j].rfind('displayversion')
+            if i != -1:
+                vigem_version = registry_str[i:j].split()[2]
+                if vigem_version != VIGEMBUS_VERSION:
+                    warnings.warn(f"found vigembus version {vigem_version} on your system. Expected {VIGEMBUS_VERSION}.")
+        else:
+            vigem_installed = False
+    except Exception as e:
+        vigem_installed = False
+        warnings.warn(f"vgamepad could not run the vigembus detection on your system, "
+                      f"an exception has been caught while trying: \n{e}")
+    
+    # Prompt installation of the ViGEmBus driver (blocking call)
+    # Skip installation if environment variable is set or if already installed
+    if not vigem_installed and os.environ.get('VGAMEPAD_SKIP_VIGEMBUS_INSTALL', 'false').lower() == 'false':
+        if pathMsi.exists():
+            subprocess.call(['msiexec', '/i', str(pathMsi)])
+        else:
+            warnings.warn(f"ViGEmBus installer not found at {pathMsi}. "
+                          f"Please install ViGEmBus manually from "
+                          f"https://github.com/ViGEm/ViGEmBus/releases/tag/setup-v1.17.333")
+
+
+# Check and install ViGEmBus when the module is first imported
+_check_and_install_vigembus()
 
 
 class VBus:
