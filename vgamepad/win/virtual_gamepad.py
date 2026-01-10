@@ -37,8 +37,12 @@ def dummy_callback(client, target, large_motor, small_motor, led_number, user_da
 def _check_and_install_vigembus():
     """
     Checks if ViGEmBus is installed, and prompts installation if not.
-    This function is called once when the module is first loaded.
+    This function is called once when the module is first loaded on Windows.
     """
+    # Safety check: only run on Windows
+    if platform.system() != 'Windows':
+        return
+    
     VIGEMBUS_VERSION = "1.17.333.0"
     
     # Determine architecture
@@ -86,7 +90,7 @@ def _check_and_install_vigembus():
     # Skip installation if environment variable is set or if already installed
     if not vigem_installed and os.environ.get('VGAMEPAD_SKIP_VIGEMBUS_INSTALL', 'false').lower() == 'false':
         if pathMsi.exists():
-            subprocess.call(['msiexec', '/i', str(pathMsi)], shell=True)
+            subprocess.call(['msiexec', '/i', str(pathMsi)])
         else:
             warnings.warn(f"ViGEmBus installer not found at {pathMsi}. "
                           f"Please install ViGEmBus manually from "

@@ -6,8 +6,9 @@ assert platform.system() in ('Windows', 'Linux'), "vgamepad is only supported on
 
 is_windows = platform.system() == 'Windows'
 
-# Note: ViGEmBus installation is now handled at runtime when the user first creates a gamepad object,
-# rather than during pip install. This ensures that the MSI installer files are available at the correct path.
+# Note: ViGEmBus installation is now handled at runtime when the vgamepad.win.virtual_gamepad
+# module is first imported (on Windows only), rather than during pip install.
+# This ensures that the MSI installer files are available at the correct path.
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
